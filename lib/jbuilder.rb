@@ -56,13 +56,13 @@ class Jbuilder < BlankSlate
   #
   #   json.comments(@post.comments) do |json, comment|
   #     json.content comment.formatted_content
-  #   end  
+  #   end
   def child!
     @attributes = [] unless @attributes.is_a? Array
     @attributes << _new_instance._tap { |jbuilder| yield jbuilder }.attributes!
   end
 
-  # Turns the current element into an array and iterates over the passed collection, adding each iteration as 
+  # Turns the current element into an array and iterates over the passed collection, adding each iteration as
   # an element of the resulting array.
   #
   # Example:
@@ -83,12 +83,12 @@ class Jbuilder < BlankSlate
   #   json.people(@people) do |json, person|
   #     json.name person.name
   #     json.age calculate_age(person.birthday)
-  #   end  
+  #   end
   #
   #   { "people": [ { "name": David", "age": 32 }, { "name": Jamie", "age": 31 } ] }
   def array!(collection)
     @attributes = [] and return if collection.empty?
-    
+
     collection.each do |element|
       child! do |child|
         yield child, element
@@ -128,7 +128,7 @@ class Jbuilder < BlankSlate
   def attributes!
     @attributes
   end
-  
+
   # Encodes the current builder as JSON.
   def target!
     ActiveSupport::JSON.encode @attributes
@@ -152,7 +152,7 @@ class Jbuilder < BlankSlate
       # { "comments": ... }
       when args.empty? && block_given?
         _yield_nesting(method) { |jbuilder| yield jbuilder }
-      
+
       # json.comments(@post.comments, :content, :created_at)
       # { "comments": [ { "content": "hello", "created_at": "..." }, { "content": "world", "created_at": "..." } ] }
       when args.many? && args.first.is_a?(Enumerable)
@@ -177,7 +177,7 @@ class Jbuilder < BlankSlate
     def _inline_nesting(container, collection, attributes)
       __send__(container) do |parent|
         parent.array!(collection) and return if collection.empty?
-        
+
         collection.each do |element|
           parent.child! do |child|
             attributes.each do |attribute|
@@ -187,7 +187,7 @@ class Jbuilder < BlankSlate
         end
       end
     end
-    
+
     def _yield_iteration(container, collection)
       __send__(container) do |parent|
         parent.array!(collection) do |child, element|
@@ -195,7 +195,7 @@ class Jbuilder < BlankSlate
         end
       end
     end
-    
+
     def _inline_extract(container, record, attributes)
       __send__(container) { |parent| parent.extract! record, *attributes }
     end
