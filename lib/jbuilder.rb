@@ -3,11 +3,31 @@ require 'active_support/ordered_hash'
 require 'active_support/core_ext/array/access'
 require 'active_support/core_ext/enumerable'
 require 'active_support/json'
+require "yajl"
+
+class JsonWrapper
+  def initialize(json_string)
+    @json_string = json_string
+  end
+
+  # yajl-ruby will check if this method exists and call it if so
+  # then append the return value directly onto the output buffer as-is
+  # this means that this method is assumed to be returning valid JSON
+  def to_json
+    @json_string
+  end
+end
 
 class Jbuilder < BlankSlate
   # Yields a builder and automatically turns the result into a JSON string
   def self.encode
     new._tap { |jbuilder| yield jbuilder }.target!
+  end
+
+  def self.encode_with_cache(cache_key)
+    Rails.cache.fetch(cache_key) do
+      new._tap { |jbuilder| yield jbuilder }.target!
+    end    
   end
 
   define_method(:__class__, find_hidden_method(:class))
@@ -62,6 +82,11 @@ class Jbuilder < BlankSlate
     @attributes << _new_instance._tap { |jbuilder| yield jbuilder }.attributes!
   end
 
+  def child_json!(json)
+    @attributes = [] unless @attributes.is_a? Array
+    @attributes << JsonWrapper.new(json)
+  end
+
   # Turns the current element into an array and iterates over the passed collection, adding each iteration as 
   # an element of the resulting array.
   #
@@ -90,9 +115,20 @@ class Jbuilder < BlankSlate
     @attributes = [] and return if collection.empty?
     
     collection.each do |element|
-      child! do |child|
-        yield child, element
+      if element.respond_to?(:cache_key)
+        key = "#{element.cache_key}.json"
+
+        cached_json = Rails.cache.fetch(key) do 
+          _new_instance._tap { |jbuilder| yield jbuilder, element }.target!
+        end
+        child_json! cached_json
+
+      else
+        child! do |child|
+          yield child, element
+        end
       end
+
     end
   end
 
@@ -131,7 +167,7 @@ class Jbuilder < BlankSlate
   
   # Encodes the current builder as JSON.
   def target!
-    ActiveSupport::JSON.encode @attributes
+    Yajl::Encoder.encode @attributes
   end
 
 
