@@ -9,7 +9,7 @@ class JbuilderTemplate < Jbuilder
   end
   
   def partial!(partial_name, options = {})
-    @context.render(partial_name, options.merge(:json => self))
+    @context.render(partial_name, options.merge(:json => new(@context)))
   end
   
   private
@@ -23,6 +23,8 @@ class JbuilderHandler
   self.default_format = Mime::JSON
 
   def self.call(template)
+
+
     %{
       if defined?(json)
         #{template.source}
