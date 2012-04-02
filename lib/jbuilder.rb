@@ -95,15 +95,23 @@ class Jbuilder < BlankSlate
   def array!(collection)
     @attributes = [] and return if collection.empty?
     
+    cached = Rails.cache.read_multi(
+      collection.select { |el| el.respond_to?(:cache_key) }.
+                 map    { |el| "#{el.cache_key}.json" }
+    )
+
     collection.each do |element|
       if element.respond_to?(:cache_key)
         key = "#{element.cache_key}.json"
 
-        cached_json = Rails.cache.fetch(key) do 
-          _new_instance._tap { |jbuilder| yield jbuilder, element }.target!
-        end
-        child_json! cached_json
+        cached_json = cached[key]
 
+        if cached_json.blank?
+          cached_json = _new_instance._tap { |jbuilder| yield jbuilder, element }.target!
+          Rails.cache.write(key, cached_json)
+        end
+
+        child_json! cached_json
       else
         child! do |child|
           yield child, element

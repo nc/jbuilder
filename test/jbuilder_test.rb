@@ -9,15 +9,23 @@ class Cache
   end
 
   def fetch(key)
+    puts "Cache#fetch #{key}"
     @values[key] || (@values[key] = yield)
   end
 
   def read(key)
+    puts "Cache#read #{key}"
     @values[key]
   end
 
   def write(key, value)
+    puts "Cache#write #{key} #{value}"
     @values[key] = value
+  end
+
+  def read_multi(keys)
+    puts "Cache#read_multi #{keys}"
+    @values.select { |k, v| keys.include?(k) }
   end
 end
 
@@ -282,6 +290,29 @@ class JbuilderTest < ActiveSupport::TestCase
       assert_equal "world", parsed.second["content"]
     end
   end
+
+
+  test "top-level array (cached, multi_read)" do
+    comments = [ Comment.new("hello", 1), Comment.new("world", 2) ]
+
+    json = Jbuilder.encode do |json|
+      json.array!(comments) do |json, comment|
+        json.content comment.content
+      end
+    end
+
+    json = Jbuilder.encode do |json|
+      json.array!(comments) do |json, comment|
+        json.content comment.content
+      end
+    end
+    
+    JSON.parse(json).tap do |parsed|
+      assert_equal "hello", parsed.first["content"]
+      assert_equal "world", parsed.second["content"]
+    end
+  end
+  
   
   test "empty top-level array" do
     comments = []
