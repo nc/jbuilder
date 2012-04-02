@@ -3,12 +3,44 @@ require 'active_support/test_case'
 
 require 'jbuilder'
 
+class Cache
+  def initialize
+    @values = {}
+  end
+
+  def fetch(key)
+    @values[key] || (@values[key] = yield)
+  end
+
+  def read(key)
+    @values[key]
+  end
+
+  def write(key, value)
+    @values[key] = value
+  end
+end
+
+class Rails
+  def self.cache
+    @cache ||= Cache.new
+  end
+end
+
 class JbuilderTest < ActiveSupport::TestCase
   test "single key" do
     json = Jbuilder.encode do |json|
       json.content "hello"
     end
     
+    assert_equal "hello", JSON.parse(json)["content"]
+  end
+
+  test "cache_key" do
+    json = Jbuilder.encode_with_cache("12345") do |json|
+      json.content "hello"
+    end
+
     assert_equal "hello", JSON.parse(json)["content"]
   end
 
@@ -222,6 +254,34 @@ class JbuilderTest < ActiveSupport::TestCase
       assert_equal "world", parsed.second["content"]
     end
   end 
+
+  class Comment
+    attr_accessor :content, :id
+
+    def cache_key
+      "cache_key_#{id}"
+    end
+
+    def initialize(content, id)
+      @content, @id = content, id
+    end
+
+  end
+
+  test "top-level array (cached)" do
+    comments = [ Comment.new("hello", 1), Comment.new("world", 2) ]
+
+    json = Jbuilder.encode do |json|
+      json.array!(comments) do |json, comment|
+        json.content comment.content
+      end
+    end
+    
+    JSON.parse(json).tap do |parsed|
+      assert_equal "hello", parsed.first["content"]
+      assert_equal "world", parsed.second["content"]
+    end
+  end
   
   test "empty top-level array" do
     comments = []

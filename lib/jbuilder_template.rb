@@ -7,18 +7,11 @@ class JbuilderTemplate < Jbuilder
     @context = context
     super()
   end
-
-  def partial!(options, locals = {})
-    case options
-    when Hash
-      options[:locals] ||= {}
-      options[:locals].merge!(:json => self)
-      @context.render(options)
-    else
-      @context.render(options, locals.merge(:json => self))
-    end
+  
+  def partial!(partial_name, options = {})
+    @context.render(partial_name, options.merge(:json => new(@context)))
   end
-
+  
   private
     def _new_instance
       __class__.new(@context)
@@ -30,6 +23,8 @@ class JbuilderHandler
   self.default_format = Mime::JSON
 
   def self.call(template)
+
+
     %{
       if defined?(json)
         #{template.source}
