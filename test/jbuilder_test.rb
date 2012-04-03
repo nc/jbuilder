@@ -274,6 +274,10 @@ class JbuilderTest < ActiveSupport::TestCase
       @content, @id = content, id
     end
 
+    def jbuilder_cache_key
+      cache_key + ".json"      
+    end
+
   end
 
   test "top-level array (cached)" do

@@ -114,17 +114,21 @@ class Jbuilder < BlankSlate
   def array!(collection)
     @attributes = [] and return if collection.empty?
     
-    cached = Rails.cache.read_multi(
-      collection.select { |el| el.respond_to?(:cache_key) }.
-                 map    { |el| "#{el.cache_key}.json" }
-    )
+    keys = collection.select { |el| el.respond_to?(:jbuilder_cache_key) }.
+                      map    { |el| el.jbuilder_cache_key }
+
+    cached = if keys.blank? 
+      {}
+    else
+      Rails.cache.read_multi(keys)
+    end
 
     # set the maximum no of cache_writes (reduce the latency penalty we pay per attempt)
     max_cache_writes = 50;
 
     collection.each do |element|
-      if element.respond_to?(:cache_key)
-        key = "#{element.cache_key}.json"
+      if element.respond_to?(:jbuilder_cache_key) 
+        key = element.jbuilder_cache_key
 
         cached_json = cached[key]
 
