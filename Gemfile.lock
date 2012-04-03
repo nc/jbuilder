@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    jbuilder (0.4.0)
+    jbuilder (0.4.1)
       activesupport (>= 3.0.0)
       blankslate (>= 2.1.2.4)
 

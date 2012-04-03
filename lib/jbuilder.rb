@@ -119,6 +119,9 @@ class Jbuilder < BlankSlate
                  map    { |el| "#{el.cache_key}.json" }
     )
 
+    # set the maximum no of cache_writes (reduce the latency penalty we pay per attempt)
+    max_cache_writes = 50;
+
     collection.each do |element|
       if element.respond_to?(:cache_key)
         key = "#{element.cache_key}.json"
@@ -127,7 +130,10 @@ class Jbuilder < BlankSlate
 
         if cached_json.blank?
           cached_json = _new_instance._tap { |jbuilder| yield jbuilder, element }.target!
-          Rails.cache.write(key, cached_json)
+          if max_cache_writes > 0
+            Rails.cache.write(key, cached_json)
+            max_cache_writes =- 1
+          end 
         end
 
         child_json! cached_json
