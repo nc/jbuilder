@@ -136,7 +136,7 @@ class Jbuilder < BlankSlate
           cached_json = _new_instance._tap { |jbuilder| yield jbuilder, element }.target!
           if max_cache_writes > 0
             Rails.cache.write(key, cached_json)
-            max_cache_writes =- 1
+            max_cache_writes -= 1
           end 
         end
 
