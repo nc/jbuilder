@@ -127,7 +127,7 @@ class Jbuilder < BlankSlate
     max_cache_writes = 50;
 
     collection.each do |element|
-      if element.respond_to?(:jbuilder_cache_key) 
+      if element.respond_to?(:should_cache?) && element.respond_to?(:jbuilder_cache_key) && element.should_cache?
         key = element.jbuilder_cache_key
 
         cached_json = cached[key]
