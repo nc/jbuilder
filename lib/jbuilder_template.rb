@@ -9,9 +9,9 @@ class JbuilderTemplate < Jbuilder
   end
   
   def partial!(partial_name, options = {})
-    @context.render(partial_name, options.merge(:json => new(@context)))
+    @context.render(partial_name, options.merge(:json => self))
   end
-  
+    
   private
     def _new_instance
       __class__.new(@context)

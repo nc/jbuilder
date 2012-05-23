@@ -172,6 +172,7 @@ class Jbuilder < BlankSlate
       case
       when args.one?
         array!(args.first) { |json, element| yield json, element }
+      
       when args.many?
         extract!(*args)
       end
